@@ -164,6 +164,7 @@
             const tools = data;
             // ========================================================
             
+            
             // Calculate KPIs
             const totalTools = tools.length;
             const toolsInShop = tools.filter(tool => tool.Status === 'In Shop').length;
@@ -314,7 +315,7 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <span class="${statusClass}">${status}</span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${currentHolder}</td>
+                    <td classs="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${currentHolder}</td>
                 `;
                 
                 tableBody.appendChild(row);
