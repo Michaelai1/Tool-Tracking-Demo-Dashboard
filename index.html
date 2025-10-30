@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tool Tracking Admin Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100">
+
+    <!-- Header -->
+    <header class="bg-gray-800 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="text-sm text-blue-200 font-semibold tracking-widest">NextGen AI</div>
+            <h1 class="text-3xl font-bold">Tool Tracking Admin Portal</h1>
+        </div>
+        <!-- Tab Navigation -->
+        <nav class="container mx-auto px-4">
+            <div class="flex border-b border-gray-700">
+                <button class="tab-btn active" onclick="openTab(event, 'Dashboard')">Dashboard</button>
+                <button class="tab-btn" onclick="openTab(event, 'Tools')">Live Inventory</button>
+                <button class="tab-btn" onclick="openTab(event, 'Crews')">Crew Roster</button>
+                <button class="tab-btn" onclick="openTab(event, 'Logs')">Event Log</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+
+        <!-- Loading State (Covers all tabs) -->
+        <div id="loadingDiv" class="text-center py-20">
+            <svg class="spinner mx-auto h-12 w-12 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-gray-600 text-xl mt-4 font-semibold">Loading All System Data...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorDiv" class="hidden text-center py-20">
+            <!-- ... (Error HTML is the same as before) ... -->
+        </div>
+
+        <!-- ======== TAB 1: DASHBOARD ======== -->
+        <div id="Dashboard" class="tab-content active">
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <!-- (KPI cards are the same as before) -->
+                <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Total Tools</p>
+                        <p id="totalTools" class="text-3xl font-bold text-gray-800 mt-2">0</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Tools In Shop</p>
+                        <p id="toolsInShop" class="text-3xl font-bold text-gray-800 mt-2">0</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Tools Checked Out</p>
+                        <p id="toolsCheckedOut" class="text-3xl font-bold text-gray-800 mt-2">0</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Tools by Status</h2>
+                    <canvas id="pieChart"></canvas>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Days in Use</h2>
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======== TAB 2: LIVE INVENTORY (TOOLS) ======== -->
+        <div id="Tools" class="tab-content">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Live Inventory</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tool Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Holder</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Condition</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days in Use</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Edit</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBodyTools" class="bg-white divide-y divide-gray-200">
+                            <!-- Tool data rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ======== TAB 3: CREW ROSTER ======== -->
+        <div id="Crews" class="tab-content">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Crew Roster</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Crew Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Foreman Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Crew Members</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tools Out</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Edit</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBodyCrews" class="bg-white divide-y divide-gray-200">
+                            <!-- Crew data rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======== TAB 4: EVENT LOG ======== -->
+        <div id="Logs" class="tab-content">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Live Event Log</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time Stamp</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tool</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Crew</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBodyLogs" class="bg-white divide-y divide-gray-200">
+                            <!-- Log data rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ======== EDIT TOOL MODAL (Hidden by default) ======== -->
+    <div id="editModal" class="fixed inset-0 z-10 flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-gray-600 opacity-75"></div>
+        <div class="bg-white rounded-lg shadow-xl z-20 max-w-md w-full p-6">
+            <h2 class="text-2xl font-bold mb-4" id="modalTitle">Edit Tool</h2>
+            
+            <!-- Hidden field to store the record ID -->
+            <input type="hidden" id="modalRecordId">
+            
+            <div class="mb-4">
+                <label for="modalCondition" class="block text-sm font-medium text-gray-700">Condition</label>
+                <select id="modalCondition" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <option>Good</option>
+                    <option>Fair</option>
+                    <option>Needs Repair</option>
+                </select>
+            </div>
+            
+            <div class="flex justify-end space-x-4">
+                <button onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
+                    Cancel
+                </button>
+                <button onclick="saveToolCondition()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- N8N WEBHOOK URLS ---
+        // Make sure these are active and return simplified, CORS-enabled data
+        const N8N_BASE_URL = 'https://michaelcarey.app.n8n.cloud/webhook/';
+        const GET_TOOLS_URL = N8N_BASE_URL + 'getDashboardData';
+        const GET_CREWS_URL = N8N_BASE_URL + 'getCrewData';
+        const GET_LOGS_URL  = N8N_BASE_URL + 'getLogData';
+        const UPDATE_TOOL_URL = N8N_BASE_URL + 'updateToolCondition';
+        // --------------------------
+
+        // Chart instances
+        let pieChart = null;
+        let barChart = null;
+
+        // Global data cache
+        let allTools = [];
+        let allCrews = [];
+        let allLogs = [];
+
+        // --- TAB NAVIGATION ---
+        function openTab(evt, tabName) {
+            let i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tab-btn");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        // --- INITIAL DATA LOAD ---
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllDashboardData();
+        });
+
+        async function loadAllDashboardData() {
+            document.getElementById('loadingDiv').classList.remove('hidden');
+            document.getElementById('errorDiv').classList.add('hidden');
+            
+            try {
+                // Fetch all data in parallel
+                const [toolsResponse, crewsResponse, logsResponse] = await Promise.all([
+                    fetch(GET_TOOLS_URL),
+                    fetch(GET_CREWS_URL),
+                    fetch(GET_LOGS_URL)
+                ]);
+
+                if (!toolsResponse.ok) throw new Error('Failed to fetch tools');
+                if (!crewsResponse.ok) throw new Error('Failed to fetch crews');
+                if (!logsResponse.ok) throw new Error('Failed to fetch logs');
+
+                allTools = await toolsResponse.json();
+                allCrews = await crewsResponse.json();
+                allLogs = await logsResponse.json();
+                
+                // --- Process and render all data ---
+                
+                // 1. Dashboard Tab
+                processDashboardData(allTools);
+                
+                // 2. Tools Tab
+                populateInventoryTable(allTools);
+                
+                // 3. Crews Tab
+                populateCrewTable(allCrews);
+                
+                // 4. Logs Tab
+                populateLogTable(allLogs);
+                
+                // --- Show content ---
+                document.getElementById('loadingDiv').classList.add('hidden');
+                document.getElementById(document.querySelector('.tab-btn.active').getAttribute('onclick').split("'")[1]).style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                document.getElementById('loadingDiv').classList.add('hidden');
+                document.getElementById('errorDiv').classList.remove('hidden');
+            }
+        }
+
+        // --- 1. DASHBOARD TAB FUNCTIONS ---
+        function processDashboardData(tools) {
+            const totalTools = tools.length;
+            const toolsInShop = tools.filter(tool => tool.Status === 'In Shop').length;
+            const toolsCheckedOut = tools.filter(tool => tool.Status === 'Checked Out').length;
+            
+            document.getElementById('totalTools').textContent = totalTools;
+            document.getElementById('toolsInShop').textContent = toolsInShop;
+            document.getElementById('toolsCheckedOut').textContent = toolsCheckedOut;
+            
+            createPieChart(tools);
+            createBarChart(tools);
+        }
+
+        function createPieChart(tools) {
+            const statusCounts = {};
+            tools.forEach(tool => {
+                const status = tool.Status || 'Unknown';
+                statusCounts[status] = (statusCounts[status] || 0) + 1;
+            });
+            const ctx = document.getElementById('pieChart').getContext('2d');
+            if (pieChart) pieChart.destroy();
+            pieChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(statusCounts),
+                    datasets: [{
+                        data: Object.values(statusCounts),
+                        backgroundColor: ['#10B981', '#F59E0B', '#EF4444', '#6B7280'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+
+        function createBarChart(tools) {
+            const toolNames = tools.map(tool => tool['Tool Name'] || 'Unknown Tool');
+            const daysInUse = tools.map(tool => tool['Days in Use'] || 0);
+            const ctx = document.getElementById('barChart').getContext('2d');
+            if (barChart) barChart.destroy();
+            barChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: toolNames,
+                    datasets: [{
+                        label: 'Days in Use',
+                        data: daysInUse,
+                        backgroundColor: '#3B82F6',
+                    }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+            });
+        }
+
+        // --- 2. TOOLS TAB FUNCTIONS (Live Inventory) ---
+        function populateInventoryTable(tools) {
+            const tableBody = document.getElementById('tableBodyTools');
+            tableBody.innerHTML = '';
+            tools.forEach(tool => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                
+                const toolName = tool['Tool Name'] || 'N/A';
+                const status = tool.Status || 'Unknown';
+                const currentHolder = tool['Current Holder'] || 'N/A';
+                const condition = tool.Condition || 'N/A';
+                const daysInUse = tool['Days in Use'] || 0;
+                
+                let statusClass = 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full ';
+                if (status === 'In Shop') statusClass += 'bg-green-100 text-green-800';
+                else if (status === 'Checked Out') statusClass += 'bg-orange-100 text-orange-800';
+                else statusClass += 'bg-red-100 text-red-800';
+
+                let conditionClass = 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full ';
+                if (condition === 'Good') conditionClass += 'bg-green-100 text-green-800';
+                else if (condition === 'Fair') conditionClass += 'bg-yellow-100 text-yellow-800';
+                else conditionClass += 'bg-red-100 text-red-800';
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${toolName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm"><span class="${statusClass}">${status}</span></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${currentHolder}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm"><span class="${conditionClass}">${condition}</span></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${daysInUse}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="openEditModal('${tool.id}', '${toolName}', '${condition}')" class="text-blue-600 hover:text-blue-900">Edit</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // --- 3. CREWS TAB FUNCTIONS ---
+        function populateCrewTable(crews) {
+            const tableBody = document.getElementById('tableBodyCrews');
+            tableBody.innerHTML = '';
+            crews.forEach(crew => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+
+                // NEW: Get Crew Members data
+                const crewMembers = crew['Crew Members'] || 'N/A';
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${crew['Crew Name'] || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${crew['Foreman Name'] || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${crewMembers}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${crew['Tools Out'] || 'None'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="alert('This would open the crew editor. (Demo Only)')" class="text-blue-600 hover:text-blue-900">Edit</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // --- 4. LOGS TAB FUNCTIONS ---
+        function populateLogTable(logs) {
+            const tableBody = document.getElementById('tableBodyLogs');
+            tableBody.innerHTML = '';
+            // Sort logs by timestamp, newest first
+            logs.sort((a, b) => new Date(b['Time Stamp']) - new Date(a['Time Stamp']));
+            
+            logs.forEach(log => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                
+                const formattedTime = log['Time Stamp'] ? new Date(log['Time Stamp']).toLocaleString() : 'N/A';
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formattedTime}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${log.Tool || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${log.Crew || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${log.Action || 'N/A'}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // --- EDIT MODAL FUNCTIONS ---
+        function openEditModal(recordId, toolName, currentCondition) {
+            document.getElementById('modalRecordId').value = recordId;
+            document.getElementById('modalTitle').textContent = `Edit Tool: ${toolName}`;
+            document.getElementById('modalCondition').value = currentCondition;
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.add('hidden');
+        }
+
+        async function saveToolCondition() {
+            const recordId = document.getElementById('modalRecordId').value;
+            const newCondition = document.getElementById('modalCondition').value;
+
+            try {
+                const response = await fetch(UPDATE_TOOL_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        recordId: recordId,
+                        newCondition: newCondition
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to save changes');
+                }
+                
+                closeModal();
+                // Refresh all dashboard data to show the change
+                loadAllDashboardData(); 
+
+            } catch (error) {
+                console.error('Error saving tool condition:', error);
+                alert('Error: Could not save changes. Please check n8n workflow.');
+            }
+        }
+
+    </script>
+</body>
+</html>
+
+
